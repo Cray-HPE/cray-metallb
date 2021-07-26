@@ -108,6 +108,7 @@ controller:
 # speaker contains configuration specific to the MetalLB speaker
 # daemonset.
 speaker:
+  priorityClassName: csm-high-priority-service
   image:
     repository: metallb/speaker
     tag: v0.8.1

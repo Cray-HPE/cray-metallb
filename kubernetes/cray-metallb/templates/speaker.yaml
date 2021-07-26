@@ -29,6 +29,9 @@ spec:
 {{- end }}
     spec:
       serviceAccountName: {{ template "metallb.speakerServiceAccountName" . }}
+{{- if .Values.speaker.priorityClassName }}
+      priorityClassName: {{ .Values.speaker.priorityClassName }}
+{{- end }}
       terminationGracePeriodSeconds: 0
       hostNetwork: true
 {{- if gt (len .Values.speaker.initContainers) 0 }}
