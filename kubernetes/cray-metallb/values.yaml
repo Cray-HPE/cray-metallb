@@ -1,126 +1,65 @@
-# Default values for metallb.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-imagesHost: "dtr.dev.cray.com"
-
-# To configure MetalLB, you must specify ONE of the following two
-# options.
-
-# existingConfigMap specifies the name of an externally-defined
-# ConfigMap to use as the configuration. Helm will not manage the
-# contents of this ConfigMap, it is your responsibility to create it.
-existingConfigMap: config
-
-# configInline specifies MetalLB's configuration directly, in yaml
-# format. When configInline is used, Helm manages MetalLB's
-# configuration ConfigMap as part of the release, and
-# existingConfigMap is ignored.
 #
-# Refer to https://metallb.universe.tf/configuration/ for
-# available options.
-configInline: {}
+# Until https://github.com/metallb/metallb/issues/995 is resolved, we'll patch
+# to add pod priority class name to speaker and controller pods.  Once we pull
+# in a version of metallb that contains this fix, at which time we can remove
+# the patch-pod-priority.yaml file in the templates directory, as well
+# as this kubectl image:
+#
+kubectl:
+  repository: artifactory.algol60.net/csm-docker/stable/docker-kubectl
+  tag: 1.19.15
 
-rbac:
-  # create specifies whether to install and use RBAC rules.
-  create: true
-
-psp:
-  # create specifies whether to install and use Pod Security Policies.
-  create: true
-
-prometheus:
-  # scrape annotations specifies whether to add Prometheus metric
-  # auto-collection annotations to pods. See
-  # https://github.com/prometheus/prometheus/blob/release-2.1/documentation/examples/prometheus-kubernetes.yml
-  # for a corresponding Prometheus configuration. Alternatively, you
-  # may want to use the Prometheus Operator
-  # (https://github.com/coreos/prometheus-operator) for more powerful
-  # monitoring configuration. If you use the Prometheus operator, this
-  # can be left at false.
-  scrapeAnnotations: true
-
-  # Prometheus Operator service monitors
-  serviceMonitor:
-
-    # enable support for Prometheus Operator
-    enabled: false
-
-    # Job label for scrape target
-    jobLabel: metallb
-
-    # Scrape interval. If not set, the Prometheus default scrape interval is used.
-    interval: ""
-
-    # 	metric relabel configs to apply to samples before ingestion.
-    metricRelabelings: []
-    # - action: keep
-    #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
-    #   sourceLabels: [__name__]
-
-    # 	relabel configs to apply to samples before ingestion.
-    relabelings: []
-    # - sourceLabels: [__meta_kubernetes_pod_node_name]
-    #   separator: ;
-    #   regex: ^(.*)$
-    #   target_label: nodename
-    #   replacement: $1
-    #   action: replace
-
-  # Prometheus Operator alertmanager alerts
-  prometheusRule:
-
-    # enable alertmanager alerts
-    enabled: false
-
-
-serviceAccounts:
+metallb:
+  nameOverride: "metallb"
+  fullnameOverride: metallb
+  configInline: {}
+  #
+  # Config map will get created with customizations per environment as follows:
+  #
+  # configInline:
+  #   peers:
+  #   - peer-address: 10.252.0.2
+  #     peer-asn: 65533
+  #     my-asn: 65533
+  #   address-pools:
+  #   - name: customer-access
+  #     protocol: bgp
+  #     addresses:
+  #     - 10.101.10.128/25
+  #
+  prometheus:
+    scrapeAnnotations: true
+    prometheusRule:
+      enabled: true
+    podMonitor:
+      enabled: true
   controller:
-    # Specifies whether a ServiceAccount should be created
-    create: true
-    # The name of the ServiceAccount to use.  If not set and create is
-    # true, a name is generated using the fullname template
-    name: "controller"
+    image:
+      registry: quay.io
+      repository: metallb/controller
+      tag: v0.11.0
+    resources:
+      requests:
+        cpu: "2"
+        memory: 2Gi
+      limits:
+        cpu: "8"
+        memory: 16Gi
+    serviceAccount:
+      create: true
+      name: "controller"
   speaker:
-    # Specifies whether a ServiceAccount should be created
-    create: true
-    # The name of the ServiceAccount to use.  If not set and create is
-    # true, a name is generated using the fullname template
-    name: "speaker"
-
-# controller contains configuration specific to the MetalLB cluster
-# controller.
-controller:
-  image:
-    repository: metallb/controller
-    tag: v0.8.1
-    pullPolicy: IfNotPresent
-  resources:
-    requests:
-      cpu: "2"
-      memory: 2Gi
-    limits:
-      cpu: "8"
-      memory: 16Gi
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-
-# speaker contains configuration specific to the MetalLB speaker
-# daemonset.
-speaker:
-  priorityClassName: csm-high-priority-service
-  image:
-    repository: metallb/speaker
-    tag: v0.8.1
-    pullPolicy: IfNotPresent
-  resources:
-    requests:
-      cpu: "2"
-      memory: 2Gi
-    limits:
-      cpu: "8"
-      memory: 16Gi
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  initContainers: []
+    image:
+      registry: quay.io
+      repository: metallb/speaker
+      tag: v0.11.0
+    resources:
+      requests:
+        cpu: "2"
+        memory: 2Gi
+      limits:
+        cpu: "8"
+        memory: 16Gi
+    serviceAccount:
+      create: true
+      name: "speaker"
