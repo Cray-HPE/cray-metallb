@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "metallb.fullname" . }}-patch-pod-priority-{{ .Release.Revision }}"
+  labels:
+    app.kubernetes.io/name: {{ include "metallb.fullname" . }}-patch-pod-priority
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: patch-pod-priority
+      containers:
+        - name: patch-pod-priority
+          image: "{{ .Values.kubectl.repository }}:{{ .Values.kubectl.tag }}"
+          command:
+            - '/bin/sh'
+          args:
+            - '-c'
+            - '/usr/local/sbin/patch-pod-priority.sh'
+          volumeMounts:
+          - mountPath: /usr/local/sbin
+            name: patch-pod-priority
+      volumes:
+      - name: patch-pod-priority
+        configMap:
+          name: patch-pod-priority
+          defaultMode: 0755
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: patch-pod-priority
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [get]
+  - apiGroups: ["apps"]
+    resources: [deployments, daemonsets]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: patch-pod-priority
+subjects:
+  - kind: ServiceAccount
+    name: patch-pod-priority
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: patch-pod-priority
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: patch-pod-priority
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: patch-pod-priority
+data:
+  patch-pod-priority.sh: |-
+    #!/bin/sh
+
+    echo "Reconfiguring metallb controller deployment to include pod-priority class name"
+    cfile=/tmp/metallb-controller-deployment.yaml
+    kubectl get -n metallb-system deployment metallb-controller -o yaml > $cfile
+    sed -i '/    spec:/a\      priorityClassName: csm-high-priority-service' $cfile
+    kubectl -n metallb-system apply -f $cfile
+
+    echo "Reconfiguring metallb speaker daemonset to include pod-priority class name"
+    sfile=/tmp/metallb-speaker-daemonset.yaml
+    kubectl get -n metallb-system daemonset metallb-speaker -o yaml > $sfile
+    sed -i '/    spec:/a\      priorityClassName: csm-high-priority-service' $sfile
+    kubectl -n metallb-system apply -f $sfile
