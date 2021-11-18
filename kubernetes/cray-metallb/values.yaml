@@ -35,8 +35,8 @@ metallb:
       enabled: true
   controller:
     image:
-      registry: quay.io
-      repository: metallb/controller
+      registry: ""
+      repository: quay.io/metallb/controller
       tag: v0.11.0
     resources:
       requests:
@@ -50,8 +50,8 @@ metallb:
       name: "controller"
   speaker:
     image:
-      registry: quay.io
-      repository: metallb/speaker
+      registry: ""
+      repository: quay.io/metallb/speaker
       tag: v0.11.0
     resources:
       requests:
