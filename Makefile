@@ -1,20 +1,65 @@
-NAME ?= cray-sysmgmt-health
-CHART_PATH ?= kubernetes
-CHART_VERSION ?= local
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 
-HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
+CHART_METADATA_IMAGE ?= artifactory.algol60.net/csm-docker/stable/chart-metadata
+YQ_IMAGE ?= artifactory.algol60.net/docker.io/mikefarah/yq:4
+HELM_IMAGE ?= artifactory.algol60.net/docker.io/alpine/helm:3.7.1
+HELM_UNITTEST_IMAGE ?= artifactory.algol60.net/docker.io/quintush/helm-unittest
+HELM_DOCS_IMAGE ?= artifactory.algol60.net/docker.io/jnorwood/helm-docs:v1.5.0
 
-all : chart
-chart: chart_setup chart_package chart_test
+all: dep-up lint test package
 
+helm:
+	docker run --rm \
+		--user $(shell id -u):$(shell id -g) \
+		--mount type=bind,src="$(shell pwd)",dst=/src \
+		-w /src \
+		-e HELM_CACHE_HOME=/src/.helm/cache \
+		-e HELM_CONFIG_HOME=/src/.helm/config \
+		-e HELM_DATA_HOME=/src/.helm/data \
+		$(HELM_IMAGE) \
+		$(CMD)
 
-chart_setup:
-		mkdir -p ${CHART_PATH}/.packaged
+dep-up:
+	CMD="dep up charts/cray-metallb" $(MAKE) helm
 
-chart_package:
-		helm dep up ${CHART_PATH}/${NAME}
-		helm package ${CHART_PATH}/${NAME} -d ${CHART_PATH}/.packaged --version ${CHART_VERSION}
+lint:
+	CMD="lint charts/cray-metallb" $(MAKE) helm
 
-chart_test:
-		helm lint "${CHART_PATH}/${NAME}"
-		docker run --rm -v ${PWD}/${CHART_PATH}:/apps ${HELM_UNITTEST_IMAGE} -3 ${NAME}
+test:
+	docker run --rm \
+		-v ${PWD}/charts:/apps \
+		${HELM_UNITTEST_IMAGE} -3 \
+		cray-metallb
+
+package:
+ifdef CHART_VERSION
+	CMD="package charts/cray-metallb --version $(CHART_VERSION) -d packages" $(MAKE) helm
+else
+	CMD="package charts/* -d packages" $(MAKE) helm
+endif
+
+extracted-images:
+	CMD="template release $(CHART) --dry-run --replace --dependency-update" $(MAKE) -s helm \
+	| docker run --rm -i $(YQ_IMAGE) e -N '.. | .image? | select(.)' -
+
+annotated-images:
+	CMD="show chart $(CHART)" $(MAKE) -s helm \
+	| docker run --rm -i $(YQ_IMAGE) e -N '.annotations."artifacthub.io/images"' - \
+	| docker run --rm -i $(YQ_IMAGE) e -N '.. | .image? | select(.)' -
+
+images:
+	CHART=charts/cray-metallb $(MAKE) -s extracted-images annotated-images | sort -u
+
+snyk:
+	$(MAKE) -s images | xargs --verbose -n 1 snyk container test
+
+gen-docs:
+	docker run --rm \
+		--user $(shell id -u):$(shell id -g) \
+		--mount type=bind,src="$(shell pwd)",dst=/src \
+		-w /src \
+		$(HELM_DOCS_IMAGE) \
+		helm-docs --chart-search-root=charts
+
+clean:
+	$(RM) -r .helm packages charts/cray-metallb/charts

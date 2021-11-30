@@ -1,9 +1,0 @@
-apiVersion: v2
-version: 1.0.1
-name: cray-metallb
-appVersion: v0.11.0
-description: MetalLB is a load-balancer implementation for bare metal Kubernetes clusters
-dependencies:
-  - name: metallb
-    version: 0.11.0
-    repository: https://metallb.github.io/metallb
