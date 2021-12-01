@@ -36,7 +36,7 @@ metallb:
   controller:
     image:
       registry: ""
-      repository: quay.io/metallb/controller
+      repository: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/controller
       tag: v0.11.0
     resources:
       requests:
@@ -51,7 +51,7 @@ metallb:
   speaker:
     image:
       registry: ""
-      repository: quay.io/metallb/speaker
+      repository: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/speaker
       tag: v0.11.0
     resources:
       requests:
