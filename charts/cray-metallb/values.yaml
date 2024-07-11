@@ -30,9 +30,9 @@ metallb:
   prometheus:
     scrapeAnnotations: true
     prometheusRule:
-      enabled: true
+      enabled: false
     podMonitor:
-      enabled: true
+      enabled: false
   controller:
     image:
       registry: ""
