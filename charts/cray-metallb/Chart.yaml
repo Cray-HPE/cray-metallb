@@ -23,7 +23,7 @@
 #
 apiVersion: v2
 name: cray-metallb
-version: 1.2.1
+version: 1.2.2
 description: MetalLB is a load-balancer implementation for bare metal Kubernetes clusters
 home: https://github.com/Cray-HPE/cray-metallb
 dependencies:
