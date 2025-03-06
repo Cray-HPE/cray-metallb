@@ -9,10 +9,6 @@ kubectl:
   repository: artifactory.algol60.net/csm-docker/stable/docker-kubectl
   tag: 1.24.17
 
-frrouting:
-  repository: artifactory.algol60.net/csm-docker/stable/quay.io/frrouting/frr
-  tag: 9.1.0
-
 metallb:
   nameOverride: "metallb"
   fullnameOverride: metallb
@@ -57,6 +53,8 @@ metallb:
       registry: ""
       repository: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/speaker
       tag: v0.14.9
+    frr:
+      enabled: false
     resources:
       requests:
         cpu: "2"

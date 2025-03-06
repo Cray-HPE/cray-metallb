@@ -42,6 +42,4 @@ annotations:
       image: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/controller:v0.14.9
     - name: metallb-speaker
       image: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/speaker:v0.14.9
-    - name: frrouting
-      image: artifactory.algol60.net/csm-docker/stable/quay.io/frrouting/frr:9.1.0
   artifacthub.io/license: MIT
