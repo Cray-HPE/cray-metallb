@@ -27,6 +27,9 @@ metallb:
   #     addresses:
   #     - 10.101.10.128/25
   #
+  # Turn off PSP since no longer supported in K8s 1.25+
+  psp:
+    create: false
   prometheus:
     scrapeAnnotations: true
     prometheusRule:
