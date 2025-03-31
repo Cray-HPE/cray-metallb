@@ -37,7 +37,7 @@ metallb:
     image:
       registry: ""
       repository: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/controller
-      tag: v0.11.0
+      tag: v0.14.9
     resources:
       requests:
         cpu: "2"
@@ -52,7 +52,7 @@ metallb:
     image:
       registry: ""
       repository: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/speaker
-      tag: v0.11.0
+      tag: v0.14.9
     resources:
       requests:
         cpu: "2"
