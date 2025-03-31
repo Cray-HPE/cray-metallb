@@ -27,6 +27,8 @@ metallb:
   #     addresses:
   #     - 10.101.10.128/25
   #
+  psp:
+    create: false
   prometheus:
     scrapeAnnotations: true
     prometheusRule:
