@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metallb.fullname" . }}-apply-crds
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "metallb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: hook-apply-crds
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5" # Runs after the CRD generation hook
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ include "metallb.fullname" . }}-apply-crds-pod
+      labels:
+        {{- include "metallb.labels" . | nindent 8 }}
+        app.kubernetes.io/component: hook-apply-crds
+    spec:
+      serviceAccountName: {{ include "metallb.serviceAccountName" . }}
+      restartPolicy: Never
+      volumes:
+        - name: shared-data-volume
+          persistentVolumeClaim:
+            claimName: {{ include "metallb.fullname" . }}-hook-pvc
+
+      containers:
+        - name: crd-applier
+          image: artifactory.algol60.net/csm-docker/stable/docker.io/bitnami/kubectl:1.31.0
+          command: ['/bin/sh', '-c']
+          args:
+            - |
+              set -e 
+              FILE_PATH="/shared-data/generated-crds.yaml"
+              attempts=0
+              while [ ! -s "$FILE_PATH" ] && [ $attempts -lt 12 ]; do
+                attempts=$((attempts + 1))
+                sleep 5
+              done
+
+              if [ ! -s "$FILE_PATH" ]; then
+                echo "ERROR: Timed out waiting for $FILE_PATH or file is empty."
+                exit 1
+              fi
+
+              kubectl apply -f "$FILE_PATH"
+          volumeMounts:
+            - name: shared-data-volume
+              mountPath: /shared-data
+              readOnly: true
+  backoffLimit: 1

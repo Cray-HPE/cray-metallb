@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "metallb.fullname" . }}-generate-crds
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "metallb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: hook-generate-crds
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0" # Runs first among post-install hooks
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ include "metallb.fullname" . }}-generate-crds-pod
+      labels:
+        {{- include "metallb.labels" . | nindent 8 }}
+        app.kubernetes.io/component: hook-generate-crds
+    spec:
+      serviceAccountName: {{ include "metallb.serviceAccountName" . }}
+      restartPolicy: Never
+      volumes:
+        - name: script-volume
+          configMap:
+            name: {{ include "metallb.fullname" . }}-crd-generator-script
+            defaultMode: 0755
+        - name: work-dir
+          emptyDir: {}
+        - name: shared-data-volume
+          persistentVolumeClaim:
+            claimName: {{ include "metallb.fullname" . }}-hook-pvc
+
+      initContainers:
+        - name: fetch-customizations
+          # Use an image containing kubectl, jq, base64
+          image: bitnami/kubectl:latest # Or your preferred image
+          command: ['/bin/sh', '-c']
+          args:
+            - |
+              set -e
+              kubectl -n loftsman get secret site-init -o json | \
+              jq -e -r '.data."customizations.yaml"' | \
+              base64 -d > /work-dir/customizations.yaml
+          volumeMounts:
+            - name: work-dir
+              mountPath: /work-dir # Write customizations.yaml here
+
+      # Main container to run the Python script
+      containers:
+        - name: crd-generator
+          image: "artifactory.algol60.net/csm-docker/stable/docker.io/demisto/boto3py3:pet-utils-csm-1.6"
+          imagePullPolicy: IfNotPresent
+          command: ["python"]
+          args: [
+            "/script/generate_metallb_crds.py",
+            "--input", "/work-dir/customizations.yaml",
+            "--output", "/shared-data/generated-crds.yaml"
+          ]
+          volumeMounts:
+            - name: script-volume
+              mountPath: /script/generate_metallb_crds.py
+              subPath: generate_metallb_crds.py
+              readOnly: true
+            - name: work-dir # Mount the volume written by the init container
+              mountPath: /work-dir
+              readOnly: true # Read the customizations.yaml
+            - name: shared-data-volume # Mount the PVC for writing output
+              mountPath: /shared-data
+  backoffLimit: 1
