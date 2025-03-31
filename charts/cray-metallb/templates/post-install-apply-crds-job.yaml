@@ -18,7 +18,7 @@ spec:
         {{- include "metallb.labels" . | nindent 8 }}
         app.kubernetes.io/component: hook-apply-crds
     spec:
-      serviceAccountName: {{ include "metallb.serviceAccountName" . }}
+      serviceAccountName: post-install-apply-crds-job
       restartPolicy: Never
       volumes:
         - name: shared-data-volume
