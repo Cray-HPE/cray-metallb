@@ -33,8 +33,7 @@ spec:
 
       initContainers:
         - name: fetch-customizations
-          # Use an image containing kubectl, jq, base64
-          image: bitnami/kubectl:latest # Or your preferred image
+          image: artifactory.algol60.net/csm-docker/stable/docker.io/bitnami/kubectl:1.31.0
           command: ['/bin/sh', '-c']
           args:
             - |
@@ -44,22 +43,21 @@ spec:
               base64 -d > /work-dir/customizations.yaml
           volumeMounts:
             - name: work-dir
-              mountPath: /work-dir # Write customizations.yaml here
+              mountPath: /work-dir
 
-      # Main container to run the Python script
       containers:
         - name: crd-generator
           image: "artifactory.algol60.net/csm-docker/stable/docker.io/demisto/boto3py3:pet-utils-csm-1.6"
           imagePullPolicy: IfNotPresent
           command: ["python"]
           args: [
-            "/script/generate_metallb_crds.py",
+            "/files/generate_metallb_crds.py",
             "--input", "/work-dir/customizations.yaml",
             "--output", "/shared-data/generated-crds.yaml"
           ]
           volumeMounts:
             - name: script-volume
-              mountPath: /script/generate_metallb_crds.py
+              mountPath: /files/generate_metallb_crds.py
               subPath: generate_metallb_crds.py
               readOnly: true
             - name: work-dir # Mount the volume written by the init container
