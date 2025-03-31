@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: hook-apply-crds
   annotations:
     "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "5" # Runs after the CRD generation hook
+    "helm.sh/hook-weight": "5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
@@ -18,7 +18,7 @@ spec:
         {{- include "metallb.labels" . | nindent 8 }}
         app.kubernetes.io/component: hook-apply-crds
     spec:
-      serviceAccountName: post-install-apply-crds-job
+      serviceAccountName: metallb-hook-job-sa
       restartPolicy: Never
       volumes:
         - name: shared-data-volume
@@ -31,9 +31,10 @@ spec:
           command: ['/bin/sh', '-c']
           args:
             - |
-              set -e 
+              set -e
               FILE_PATH="/shared-data/generated-crds.yaml"
               attempts=0
+              # Wait up to 60 seconds for the file to appear and be non-empty
               while [ ! -s "$FILE_PATH" ] && [ $attempts -lt 12 ]; do
                 attempts=$((attempts + 1))
                 sleep 5

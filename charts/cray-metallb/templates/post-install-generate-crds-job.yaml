@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: hook-generate-crds
   annotations:
     "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "0" # Runs first among post-install hooks
+    "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
@@ -18,7 +18,7 @@ spec:
         {{- include "metallb.labels" . | nindent 8 }}
         app.kubernetes.io/component: hook-generate-crds
     spec:
-      serviceAccountName: post-install-generate-crds-job
+      serviceAccountName: metallb-hook-job-sa
       restartPolicy: Never
       volumes:
         - name: script-volume
@@ -60,9 +60,9 @@ spec:
               mountPath: /files/generate_metallb_crds.py
               subPath: generate_metallb_crds.py
               readOnly: true
-            - name: work-dir # Mount the volume written by the init container
+            - name: work-dir
               mountPath: /work-dir
-              readOnly: true # Read the customizations.yaml
-            - name: shared-data-volume # Mount the PVC for writing output
+              readOnly: true
+            - name: shared-data-volume
               mountPath: /shared-data
   backoffLimit: 1
