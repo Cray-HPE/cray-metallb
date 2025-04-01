@@ -55,7 +55,8 @@ metallb:
       registry: ""
       repository: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/speaker
       tag: v0.14.9
-    frr.enabled: false
+    frr:
+      enabled: false
     resources:
       requests:
         cpu: "2"
