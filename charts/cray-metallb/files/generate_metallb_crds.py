@@ -6,8 +6,8 @@ def generate_metallb_crds(customizations_yaml_path):
     crd_yamls = []
     with open(customizations_yaml_path, 'r') as customizations_file:
         customizations = yaml.safe_load(customizations_file)
-    bgp_peers = customizations['network']['metallb']['peers']
-    address_pools = customizations['network']['metallb']['address-pools']
+    bgp_peers = customizations['spec']['network']['metallb']['peers']
+    address_pools = customizations['spec']['network']['metallb']['address-pools']
     crd_yamls = []
 
     for peer in bgp_peers:
