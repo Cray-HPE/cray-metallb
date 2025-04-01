@@ -33,7 +33,7 @@ dependencies:
 maintainers:
   - name: johren-hpe
   - name: bklei
-appVersion: v0.14.9 # Tracks metallb image tags
+appVersion: v0.14.9
 annotations:
   artifacthub.io/images: |-
     - name: kubectl

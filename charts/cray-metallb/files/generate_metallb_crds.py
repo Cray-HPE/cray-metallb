@@ -49,6 +49,7 @@ def generate_metallb_crds(customizations_yaml_path):
         }
         crd_yamls.append(yaml.dump(ip_address_pool_crd))
 
+    # 3. Generate BGPAdvertisement CRDs
     nmn_peers = []]
     cmn_peers = []]
     chn_peers = []]
