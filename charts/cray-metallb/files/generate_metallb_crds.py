@@ -48,18 +48,18 @@ def generate_metallb_crds(customizations_yaml_path):
         }
         crd_yamls.append(yaml.dump(ip_address_pool_crd))
 
-    nmn_peers = set()
-    cmn_peers = set()
-    chn_peers = set()
+    nmn_peers = []]
+    cmn_peers = []]
+    chn_peers = []]
 
     for peer in bgp_peers:
         peer_name = peer.get('peer-name')
         if peer_name.endswith('-nmn'):
-            nmn_peers.add(peer_name)
+            nmn_peers.append(peer_name)
         elif peer_name.endswith('-cmn'):
-            cmn_peers.add(peer_name)
+            cmn_peers.append(peer_name)
         elif peer_name.startswith('sw-edge'):
-            chn_peers.add(peer_name)
+            chn_peers.append(peer_name)
     
     if nmn_peers:
         bgp_adv_node_mgmt = {
