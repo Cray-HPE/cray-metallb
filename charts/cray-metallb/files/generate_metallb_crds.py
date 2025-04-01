@@ -12,7 +12,7 @@ def generate_metallb_crds(customizations_yaml_path):
 
     for peer in bgp_peers:
         peer_ip = peer['peer-address']
-        peer_name = peer['peer-name']
+        peer_name = peer.get('peer-name')
 
         if peer_name is None:
             print(f"Warning: Could not determine peer name for IP {peer_ip}. Skipping.")
@@ -53,7 +53,7 @@ def generate_metallb_crds(customizations_yaml_path):
     chn_peers = set()
 
     for peer in bgp_peers:
-        peer_name = peer['peer-name']
+        peer_name = peer.get('peer-name')
         if peer_name.endswith('-nmn'):
             nmn_peers.add(peer_name)
         elif peer_name.endswith('-cmn'):
