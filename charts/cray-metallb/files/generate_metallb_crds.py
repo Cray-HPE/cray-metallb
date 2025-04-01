@@ -15,7 +15,8 @@ def generate_metallb_crds(customizations_yaml_path):
         peer_name = peer.get('peer-name')
 
         if peer_name is None:
-            print(f"Warning: Could not determine peer name for IP {peer_ip}. Skipping.")
+            print(f"Warning: Could not determine peer name for IP {peer_ip}.")
+            continue
 
         # 1. Generate BGPPeer CRDs
         bgp_peer_crd = {
