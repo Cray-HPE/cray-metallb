@@ -29,6 +29,8 @@ metallb:
   #
   psp:
     create: false
+  frr:
+    enabled: false
   prometheus:
     scrapeAnnotations: true
     prometheusRule:
