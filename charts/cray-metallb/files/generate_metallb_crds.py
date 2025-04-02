@@ -50,17 +50,18 @@ def generate_metallb_crds(customizations_yaml_path):
         crd_yamls.append(yaml.dump(ip_address_pool_crd))
 
     # 3. Generate BGPAdvertisement CRDs
-    nmn_peers = []]
-    cmn_peers = []]
-    chn_peers = []]
+    nmn_peers = []
+    cmn_peers = []
+    chn_peers = []
 
     for peer in bgp_peers:
         peer_name = peer.get('peer-name')
-        if peer_name.endswith('-nmn'):
+        device_network = peer.get('device-network')
+        if device_network == 'nmn':
             nmn_peers.append(peer_name)
-        elif peer_name.endswith('-cmn'):
+        elif device_network == 'cmn':
             cmn_peers.append(peer_name)
-        elif peer_name.startswith('sw-edge'):
+        elif device_network == 'chn':
             chn_peers.append(peer_name)
     
     if nmn_peers:
