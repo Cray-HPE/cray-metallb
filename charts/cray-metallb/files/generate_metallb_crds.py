@@ -55,7 +55,7 @@ def generate_metallb_crds(customizations_yaml_path):
     chn_peers = []
 
     for peer in bgp_peers:
-        peer_name = peer.get('peer-name')
+        peer_name = peer.get('device-name')
         device_network = peer.get('device-network')
         if device_network == 'nmn':
             nmn_peers.append(peer_name)
