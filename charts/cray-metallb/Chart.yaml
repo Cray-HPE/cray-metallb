@@ -37,7 +37,7 @@ appVersion: v0.14.9
 annotations:
   artifacthub.io/images: |-
     - name: kubectl
-      image: artifactory.algol60.net/csm-docker/stable/docker.io/bitnami/kubectl:1.31.0
+      image: artifactory.algol60.net/csm-docker/stable/docker.io/bitnami/kubectl:1.32.2
     - name: metallb-controller
       image: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/controller:v0.14.9
     - name: metallb-speaker
