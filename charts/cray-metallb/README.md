@@ -37,7 +37,6 @@ file stored in loftsman.
 
 Here are the rules for how the advertisements are generated based
 on the name of the bgp-peer:
-Here are the rules for advertisement building:
 - If the name ends in -nmn, add it to the node-management advertisement
 - If the name ends in -cmn, add it to the customer-management advertisement
 - If the name starts with sw-edge add it to the customer-high-speed advertisement
