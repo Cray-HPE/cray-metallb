@@ -4,19 +4,6 @@ MetalLB
 MetalLB is a load-balancer implementation for bare metal [Kubernetes][k8s-home]
 clusters, using standard routing protocols.
 
-Deprecated chart
-----------------
-
-This chart is deprecated in favour of the [bitnami maintained chart](https://github.com/bitnami/charts/tree/master/bitnami/metallb)
-(conversion to newer chart will happen as part of CASMPET-3521).
-
-
-TL;DR;
-------
-
-```console
-$ helm install --name metallb stable/metallb
-```
 
 Introduction
 ------------
@@ -32,7 +19,7 @@ single cluster is not supported.
 Prerequisites
 -------------
 
--  Kubernetes 1.9+
+-  Kubernetes 1.13+
 
 Installing the Chart
 --------------------
@@ -40,14 +27,29 @@ Installing the Chart
 The chart can be installed as follows:
 
 ```console
-$ helm install --name metallb stable/metallb
+$ helm package .
+$ helm install -n metallb-system ./<generated-tar> -f values.yaml
 ```
 
-The command deploys MetalLB on the Kubernetes cluster. This chart does
-not provide a default configuration; MetalLB will not act on your
-Kubernetes Services until you provide
-one. The [configuration](#configuration) section lists various ways to
-provide this configuration.
+The command deploys MetalLB on the Kubernetes cluster. This chart will
+generate MetalLB CRs with values provided in the `customizations.yaml`
+file stored in loftsman. 
+
+Here are the rules for how the advertisements are generated based
+on the name of the bgp-peer:
+- If the name ends in -nmn, add it to the node-management advertisement
+- If the name ends in -cmn, add it to the customer-management advertisement
+- If the name starts with sw-edge add it to the customer-high-speed advertisement
+ 
+And then the address pools associated would be:
+- node-management advertisement
+  - node management pool (NMN)
+  - hardware management pool (NMN)
+- customer-management advertisement
+  - customer management static pool (CMN)
+  - customer management pool (CMN)
+- customer-high-speed advertisement
+  - customer high speed pool (CHN)
 
 Uninstalling the Chart
 ----------------------
@@ -90,45 +92,11 @@ parameters can be provided while installing the chart. For example,
 $ helm install --name metallb -f values.yaml stable/metallb
 ```
 
-By default, this chart does not install a configuration for MetalLB, and simply
-warns you that you must follow [the configuration instructions on MetalLB's
-website][metallb-config] to create an appropriate ConfigMap.
+By default, this chart generates CRDs for MetalLB based on data
+stored in `configurations.yaml` from loftsman.
 
-**Please note:** By default, this chart expects a ConfigMap named
-'metallb-config' within the same namespace as the chart is
-deployed. _This is different than the MetalLB documentation_, which
-asks you to create a ConfigMap in the `metallb-system` namespace, with
-the name of 'config'.
-
-For simple setups that only use MetalLB's [ARP mode][metallb-arpndp-concepts],
-you can specify a single IP range using the `arpAddresses` parameter to have the
-chart install a working configuration for you:
-
-```console
-$ helm install --name metallb \
-  --set arpAddresses=192.168.16.240/30 \
-  stable/metallb
-```
-
-If you have a more complex configuration and want Helm to manage it for you, you
-can provide it in the `config` parameter. The configuration format is
-[documented on MetalLB's website][metallb-config].
-
-```console
-$ cat values.yaml
-configInline:
-  peers:
-  - peer-address: 10.0.0.1
-    peer-asn: 64512
-    my-asn: 64512
-  address-pools:
-  - name: default
-    protocol: bgp
-    addresses:
-    - 198.51.100.0/24
-
-$ helm install --name metallb -f values.yaml stable/metallb
-```
+**Please note:** MetalLB no longer accepts a ConfigMap and must be configured
+via CRDs.
 
 [helm-home]: https://helm.sh
 [helm-usage]: https://docs.helm.sh/using_helm/

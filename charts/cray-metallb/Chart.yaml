@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,23 +23,23 @@
 #
 apiVersion: v2
 name: cray-metallb
-version: 1.2.2
+version: 2.0.0
 description: MetalLB is a load-balancer implementation for bare metal Kubernetes clusters
 home: https://github.com/Cray-HPE/cray-metallb
 dependencies:
   - name: metallb
-    version: 0.11.0
+    version: 0.14.9
     repository: https://metallb.github.io/metallb
 maintainers:
   - name: johren-hpe
   - name: bklei
-appVersion: v0.11.0  # Tracks metallb image tags
+appVersion: v0.14.9
 annotations:
   artifacthub.io/images: |-
     - name: kubectl
-      image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.24.17
+      image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.32.2
     - name: metallb-controller
-      image: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/controller:v0.11.0
+      image: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/controller:v0.14.9
     - name: metallb-speaker
-      image: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/speaker:v0.11.0
+      image: artifactory.algol60.net/csm-docker/stable/quay.io/metallb/speaker:v0.14.9
   artifacthub.io/license: MIT
