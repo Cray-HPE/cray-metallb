@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: crd-applier
-          image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.32.2
+          image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.24.17
           command: ['/bin/sh', '-c']
           args:
             - |

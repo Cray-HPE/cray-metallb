@@ -33,7 +33,7 @@ spec:
 
       initContainers:
         - name: fetch-customizations
-          image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.32.2
+          image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.24.17
           command: ['/bin/sh', '-c']
           args:
             - |
