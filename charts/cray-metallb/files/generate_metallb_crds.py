@@ -95,6 +95,7 @@ def generate_metallb_crds(customizations_yaml_path):
         }
         crd_yamls.append(yaml.dump(bgp_adv_customer_high_speed))
     else:
+        # If no chn peers, we then need to advertise the customer-access pool
         cmn_networks.append('customer-access')
 
     if cmn_peers:
