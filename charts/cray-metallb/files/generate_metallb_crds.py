@@ -79,21 +79,7 @@ def generate_metallb_crds(customizations_yaml_path):
         }
         crd_yamls.append(yaml.dump(bgp_adv_node_mgmt))
 
-    if cmn_peers:
-        bgp_adv_customer_mgmt = {
-            'apiVersion': 'metallb.io/v1beta1',
-            'kind': 'BGPAdvertisement',
-            'metadata': {
-                'name': 'customer-management',
-                'namespace': 'metallb-system'
-            },
-            'spec': {
-                'ipAddressPools': ['customer-management-static', 'customer-management'],
-                'peers': cmn_peers
-            }
-        }
-        crd_yamls.append(yaml.dump(bgp_adv_customer_mgmt))
-
+    cmn_networks = ['customer-management-static', 'customer-management']
     if chn_peers:
         bgp_adv_customer_high_speed = {
             'apiVersion': 'metallb.io/v1beta1',
@@ -108,6 +94,23 @@ def generate_metallb_crds(customizations_yaml_path):
             }
         }
         crd_yamls.append(yaml.dump(bgp_adv_customer_high_speed))
+    else:
+        cmn_networks.append('customer-access')
+
+    if cmn_peers:
+        bgp_adv_customer_mgmt = {
+            'apiVersion': 'metallb.io/v1beta1',
+            'kind': 'BGPAdvertisement',
+            'metadata': {
+                'name': 'customer-management',
+                'namespace': 'metallb-system'
+            },
+            'spec': {
+                'ipAddressPools': cmn_networks,
+                'peers': cmn_peers
+            }
+        }
+        crd_yamls.append(yaml.dump(bgp_adv_customer_mgmt))
 
     return '---\n'.join(crd_yamls)
 
