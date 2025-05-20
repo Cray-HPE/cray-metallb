@@ -12,7 +12,7 @@ def generate_metallb_crds(customizations_yaml_path):
 
     for peer in bgp_peers:
         peer_ip = peer['peer-address']
-        peer_name = peer.get('peer-name')
+        peer_name = f"{peer.get('device-name')}-{peer.get('device-network')}"
 
         if peer_name is None:
             print(f"Warning: Could not determine peer name for IP {peer_ip}.")
@@ -55,7 +55,7 @@ def generate_metallb_crds(customizations_yaml_path):
     chn_peers = []
 
     for peer in bgp_peers:
-        peer_name = peer.get('device-name')
+        peer_name = f"{peer.get('device-name')}-{peer.get('device-network')}"
         device_network = peer.get('device-network')
         if device_network == 'nmn':
             nmn_peers.append(peer_name)
@@ -79,21 +79,7 @@ def generate_metallb_crds(customizations_yaml_path):
         }
         crd_yamls.append(yaml.dump(bgp_adv_node_mgmt))
 
-    if cmn_peers:
-        bgp_adv_customer_mgmt = {
-            'apiVersion': 'metallb.io/v1beta1',
-            'kind': 'BGPAdvertisement',
-            'metadata': {
-                'name': 'customer-management',
-                'namespace': 'metallb-system'
-            },
-            'spec': {
-                'ipAddressPools': ['customer-management-static', 'customer-management'],
-                'peers': cmn_peers
-            }
-        }
-        crd_yamls.append(yaml.dump(bgp_adv_customer_mgmt))
-
+    cmn_networks = ['customer-management-static', 'customer-management']
     if chn_peers:
         bgp_adv_customer_high_speed = {
             'apiVersion': 'metallb.io/v1beta1',
@@ -108,6 +94,24 @@ def generate_metallb_crds(customizations_yaml_path):
             }
         }
         crd_yamls.append(yaml.dump(bgp_adv_customer_high_speed))
+    else:
+        # If no chn peers, we then need to advertise the customer-access pool
+        cmn_networks.append('customer-access')
+
+    if cmn_peers:
+        bgp_adv_customer_mgmt = {
+            'apiVersion': 'metallb.io/v1beta1',
+            'kind': 'BGPAdvertisement',
+            'metadata': {
+                'name': 'customer-management',
+                'namespace': 'metallb-system'
+            },
+            'spec': {
+                'ipAddressPools': cmn_networks,
+                'peers': cmn_peers
+            }
+        }
+        crd_yamls.append(yaml.dump(bgp_adv_customer_mgmt))
 
     return '---\n'.join(crd_yamls)
 
