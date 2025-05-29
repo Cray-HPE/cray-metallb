@@ -8,22 +8,39 @@ def generate_metallb_crds(customizations_yaml_path):
         customizations = yaml.safe_load(customizations_file)
     bgp_peers = customizations['spec']['network']['metallb']['peers']
     address_pools = customizations['spec']['network']['metallb']['address-pools']
-    crd_yamls = []
 
+    unknown_peer_counter = 1
+
+    # 1. Generate BGPPeer CRDs
     for peer in bgp_peers:
         peer_ip = peer['peer-address']
-        peer_name = f"{peer.get('device-name')}-{peer.get('device-network')}"
+        
+        actual_device_network = peer.get('device-network')
+        # Determine the effective network part for naming and for grouping in BGPAdvertisements
+        # If device-network is missing, assume 'nmn'
+        effective_network_part = actual_device_network if actual_device_network is not None else 'nmn'
+        peer['effective_network_for_grouping'] = effective_network_part
 
-        if peer_name is None:
-            print(f"Warning: Could not determine peer name for IP {peer_ip}.")
-            continue
+        device_name_val = peer.get('device-name')
+        final_peer_name_for_crd = ""
 
-        # 1. Generate BGPPeer CRDs
+        if device_name_val is not None:
+            # device-name is present, form name like "device-name-EFFECTIVE_NETWORK"
+            final_peer_name_for_crd = f"{device_name_val}-{effective_network_part}"
+        else:
+            # device-name is missing, use "unknown-peerX"
+            # This handles the case where "device-name and device-network fields are not present"
+            # by defaulting to unknown-peerX if device-name is missing.
+            final_peer_name_for_crd = f"unknown-peer{unknown_peer_counter}"
+            unknown_peer_counter += 1
+        
+        peer['generated_crd_name'] = final_peer_name_for_crd
+
         bgp_peer_crd = {
             'apiVersion': 'metallb.io/v1beta2',
             'kind': 'BGPPeer',
             'metadata': {
-                'name': peer_name,
+                'name': final_peer_name_for_crd,
                 'namespace': 'metallb-system'
             },
             'spec': {
@@ -50,21 +67,22 @@ def generate_metallb_crds(customizations_yaml_path):
         crd_yamls.append(yaml.dump(ip_address_pool_crd))
 
     # 3. Generate BGPAdvertisement CRDs
-    nmn_peers = []
-    cmn_peers = []
-    chn_peers = []
+    nmn_peer_names = []
+    cmn_peer_names = []
+    chn_peer_names = []
 
     for peer in bgp_peers:
-        peer_name = f"{peer.get('device-name')}-{peer.get('device-network')}"
-        device_network = peer.get('device-network')
-        if device_network == 'nmn':
-            nmn_peers.append(peer_name)
-        elif device_network == 'cmn':
-            cmn_peers.append(peer_name)
-        elif device_network == 'chn':
-            chn_peers.append(peer_name)
+        peer_name_for_advertisement = peer['generated_crd_name']
+        effective_device_network = peer['effective_network_for_grouping']
+        
+        if effective_device_network == 'nmn':
+            nmn_peer_names.append(peer_name_for_advertisement)
+        elif effective_device_network == 'cmn':
+            cmn_peer_names.append(peer_name_for_advertisement)
+        elif effective_device_network == 'chn':
+            chn_peer_names.append(peer_name_for_advertisement)
     
-    if nmn_peers:
+    if nmn_peer_names:
         bgp_adv_node_mgmt = {
             'apiVersion': 'metallb.io/v1beta1',
             'kind': 'BGPAdvertisement',
@@ -74,13 +92,13 @@ def generate_metallb_crds(customizations_yaml_path):
             },
             'spec': {
                 'ipAddressPools': ['node-management', 'hardware-management'],
-                'peers': nmn_peers
+                'peers': nmn_peer_names
             }
         }
         crd_yamls.append(yaml.dump(bgp_adv_node_mgmt))
 
     cmn_networks = ['customer-management-static', 'customer-management']
-    if chn_peers:
+    if chn_peer_names:
         bgp_adv_customer_high_speed = {
             'apiVersion': 'metallb.io/v1beta1',
             'kind': 'BGPAdvertisement',
@@ -90,15 +108,14 @@ def generate_metallb_crds(customizations_yaml_path):
             },
             'spec': {
                 'ipAddressPools': ['customer-high-speed'],
-                'peers': chn_peers
+                'peers': chn_peer_names
             }
         }
         crd_yamls.append(yaml.dump(bgp_adv_customer_high_speed))
     else:
-        # If no chn peers, we then need to advertise the customer-access pool
         cmn_networks.append('customer-access')
 
-    if cmn_peers:
+    if cmn_peer_names:
         bgp_adv_customer_mgmt = {
             'apiVersion': 'metallb.io/v1beta1',
             'kind': 'BGPAdvertisement',
@@ -108,7 +125,7 @@ def generate_metallb_crds(customizations_yaml_path):
             },
             'spec': {
                 'ipAddressPools': cmn_networks,
-                'peers': cmn_peers
+                'peers': cmn_peer_names
             }
         }
         crd_yamls.append(yaml.dump(bgp_adv_customer_mgmt))
