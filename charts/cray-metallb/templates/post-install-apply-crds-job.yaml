@@ -50,4 +50,5 @@ spec:
             - name: shared-data-volume
               mountPath: /shared-data
               readOnly: true
-  backoffLimit: 1
+  backoffLimit: 10
+  activeDeadlineSeconds: 600
